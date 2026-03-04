@@ -156,7 +156,7 @@ module tb_d2d_tx_base_path;
     string tc_name;
 
     // 256B capture buffer: 4 x 64B RDI chunks
-    logic [511:0] rdi_buf [0:3];
+    logic [511:0] rdi_buf [0:7];
     int           rdi_chunks_collected;
 
     // =========================================================================
@@ -232,8 +232,8 @@ module tb_d2d_tx_base_path;
             wait1++;
             if (rdi_lp_valid && rdi_lp_irdy && rdi_pl_trdy) begin
                 rdi_buf[col] = rdi_lp_data;
-                $display("    [RDI]  chunk[%0d] bytes[7:0]=0x%016h  (t=%0t ns)",
-                         col, rdi_lp_data[63:0], $time);
+                $display("    [RDI]  chunk[%0d] bytes[511:0]=0x%016h  (t=%0t ns)",
+                         col, rdi_lp_data[511:0], $time);
                 col++;
             end
         end
@@ -561,18 +561,21 @@ module tb_d2d_tx_base_path;
             all_ok      = 1'b1;
             rdi_pl_trdy = 1'b1;
             $display(" adter the intialization");
-            for (int f = 0; f < 3; f++) begin
-                fdi_lp_data   = p[f];
-                fdi_lp_stream = 8'h04;
-                fdi_lp_valid  = 1'b1;
-                fdi_lp_irdy   = 1'b1;
-                do @(posedge clk)begin  #1; end while (!fdi_pl_trdy);
-                $display("    [FDI]  Flit%0d sent payload[7:0]=0x%02h", f, p[f][7:0]);
-            end
-            fdi_lp_valid = 1'b0;
-            fdi_lp_irdy  = 1'b0;
-            
-            collect_rdi_chunks(4);
+            fork 
+                begin
+                    for (int f = 0; f < 3; f++) begin
+                        fdi_lp_data   = p[f];
+                        fdi_lp_stream = 8'h04;
+                        fdi_lp_valid  = 1'b1;
+                        fdi_lp_irdy   = 1'b1;
+                        do @(posedge clk)begin  #1; end while (!fdi_pl_trdy);
+                        $display("    [FDI]  Flit%0d sent payload[7:0]=0x%02h", f, p[f][7:0]);
+                    end
+                    fdi_lp_valid = 1'b0;
+                    fdi_lp_irdy  = 1'b0;
+                end
+                collect_rdi_chunks(8);
+            join
             stream = build_stream256();
 
             for (int f = 0; f < 3; f++) begin

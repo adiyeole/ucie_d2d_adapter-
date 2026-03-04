@@ -158,7 +158,8 @@ module d2d_tx_base_path (
             // Insert 16'h8010 PDS Header. Mask out stale upper bits & pad to 64B bound.
             logic [1023:0] pds_mask;
             pds_mask    = (1024'b1 << (acc_bytes_d * 8)) - 1;
-            acc_data_d  = (acc_data_d & pds_mask) | ({1008'b0, 16'h8010} << (acc_bytes_d * 8));
+            acc_data_d  = acc_data_d  | ({1008'b0, 16'h8010} << (acc_bytes_d * 8));
+            //acc_data_d  = (acc_data_d & pds_mask) | ({1008'b0, 16'h8010} << (acc_bytes_d * 8));
             acc_bytes_d = (acc_bytes_d + 8'd2 + 8'd63) & ~8'd63; // Align to 64B block
         end 
         else if (push_pad) begin

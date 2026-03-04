@@ -112,11 +112,13 @@ module tb_d2d_tx_base_path;
     wire  [2:0] state;
     assign state = dut.state_q;
 
-
+    
     logic [1023:    0] acc_data_d;
     logic [7:0] acc_bytes_d;
     logic [1023:0] acc_data_q;
-    logic [7:0] acc_bytes_q;
+    logic [7:0] acc_bytes_d_pre_push;
+    assign acc_bytes_d_pre_push =dut.acc_bytes_d_pre_push;
+    
     assign acc_bytes_q = dut.acc_bytes_q;
     assign acc_data_q = dut.acc_data_q;
     assign acc_bytes_d = dut.acc_bytes_d;

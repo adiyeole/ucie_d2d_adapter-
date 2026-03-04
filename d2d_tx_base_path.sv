@@ -112,10 +112,15 @@ module d2d_tx_base_path (
                 else if (!fdi_lp_valid && acc_bytes_d!='0 ) state_d = PDS_HDR; // Immediately begin termination
             end
             PDS_HDR: begin
+                $display(" outside loop %0t, state_d = %0d, state_q = %0d, acc_bytes_d_pre_push = %0d ", $time,
+                                             state_d, state_q, acc_bytes_d_pre_push );
                 // Wait for buffer space so padding fits easily in 128B accumulator
-                if (acc_bytes_d_pre_push <= 8'd64) begin
+                if (acc_bytes_d_pre_push <= 8'd126) begin
+                    
                     push_pds = 1'b1;
                     state_d  = PDS_PAD1;
+                    $display(" inside loop %0t, state_d = %0d, state_q = %0d, acc_bytes_d_pre_push = %0d ", $time,
+                                             state_d, state_q, acc_bytes_d_pre_push );
                 end
             end
             PDS_PAD1: begin

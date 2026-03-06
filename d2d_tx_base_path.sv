@@ -94,7 +94,10 @@ module d2d_tx_base_path (
     // Pre-calculate shift state based purely on RDI consumption this cycle
     assign acc_data_d_pre_push  = pop_rdi ? (acc_data_q >> 512) : acc_data_q;
     assign acc_bytes_d_pre_push = pop_rdi ? (acc_bytes_q - 8'd64) : acc_bytes_q;
-
+    initial begin 
+        $monitor("mon acc_bytes_d = %0d, acc_bytes_q =%0d , acc_bytes_d_pre_push = %0d, state_d = %0d, state_q=%0d, time = %0t ",
+              acc_bytes_d, acc_bytes_q,acc_bytes_d_pre_push,state_d, state_q, $time);
+    end
     always_comb begin
         state_d         = state_q;
         push_pds        = 1'b0;
@@ -104,12 +107,16 @@ module d2d_tx_base_path (
         rdi_chunk_cnt_d = rdi_chunk_cnt_q;
 
         if (pop_rdi) rdi_chunk_cnt_d = rdi_chunk_cnt_q + 2'd1;
+        if (push_flit) begin
+            acc_data_d  = acc_data_d | ({512'b0, flit_data} << (acc_bytes_d * 8));
+            acc_bytes_d = acc_bytes_d + 8'd68;
+        end
 
         // FSM Next-State Logic & Push commands
         case (state_q)
             NORMAL: begin
                 if (fdi_lp_valid) state_d = NORMAL;
-                else if (!fdi_lp_valid && acc_bytes_d!='0 ) state_d = PDS_HDR; // Immediately begin termination
+                else if (acc_bytes_d!='0 ) state_d = PDS_HDR; // Immediately begin termination
             end
             PDS_HDR: begin
                 $display(" outside loop %0t, state_d = %0d, state_q = %0d, acc_bytes_d_pre_push = %0d ", $time,
@@ -153,19 +160,28 @@ module d2d_tx_base_path (
             end */
             default:  state_d = NORMAL;
         endcase
-
+        $display( " push_flit = %0d, push_pds = %0d, push_pad = %0d , t = %0t", push_flit,push_pds,push_pds, $time);
         // Execute Push operations on the accumulator
         if (push_flit) begin
+            $display("beffl bytes_d = %0d, bytes_q =%0d , bytesdprepush = %0d, stated = %0d, stateq=%0d, time = %0t ",
+            acc_bytes_d, acc_bytes_q,acc_bytes_d_pre_push,state_d, state_q, $time);
             acc_data_d  = acc_data_d | ({512'b0, flit_data} << (acc_bytes_d * 8));
             acc_bytes_d = acc_bytes_d + 8'd68;
+            $display("affl bytes_d = %0d, bytes_q =%0d , bytesdprepush = %0d, stated = %0d, stateq=%0d, time = %0t ",
+              acc_bytes_d, acc_bytes_q,acc_bytes_d_pre_push,state_d, state_q, $time);
         end 
         else if (push_pds) begin
-            // Insert 16'h8010 PDS Header. Mask out stale upper bits & pad to 64B bound.
             logic [1023:0] pds_mask;
+            $display("afdpds bytes_d = %0d, bytes_q =%0d , bytesdprepush = %0d, stated = %0d, stateq=%0d, time = %0t ",
+              acc_bytes_d, acc_bytes_q,acc_bytes_d_pre_push,state_d, state_q, $time);
+            // Insert 16'h8010 PDS Header. Mask out stale upper bits & pad to 64B bound.
+            
             pds_mask    = (1024'b1 << (acc_bytes_d * 8)) - 1;
             acc_data_d  = acc_data_d  | ({1008'b0, 16'h8010} << (acc_bytes_d * 8));
-            //acc_data_d  = (acc_data_d & pds_mask) | ({1008'b0, 16'h8010} << (acc_bytes_d * 8));
-            acc_bytes_d = (acc_bytes_d + 8'd2 + 8'd63) & ~8'd63; // Align to 64B block
+                acc_data_d  = (acc_data_d & pds_mask) | ({1008'b0, 16'h8010} << (acc_bytes_d * 8));
+            //acc_bytes_d = (acc_bytes_d + 8'd2 + 8'd63) & ~8'd63; // Align to 64B block
+            $display("afdpds bytes_d = %0d, bytes_q =%0d , bytesdprepush = %0d, stated = %0d, stateq=%0d, time = %0t ",
+              acc_bytes_d, acc_bytes_q,acc_bytes_d_pre_push,state_d, state_q, $time);
         end 
         else if (push_pad) begin
             logic [1023:0] pad_mask;

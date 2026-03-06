@@ -108,22 +108,23 @@ module tb_d2d_tx_base_path;
 
     logic push_flit;
     logic pop_rdi;
-
-    wire  [2:0] state;
-    assign state = dut.state_q;
+    wire [ 2:0] state_d;
+    wire  [2:0] state_q;
+    assign state_d = dut.state_d;
+    assign state_q= dut.state_q;
 
     
     logic [1023:    0] acc_data_d;
     logic [7:0] acc_bytes_d;
+    logic [7:0] acc_bytes_q;
     logic [1023:0] acc_data_q;
     logic [7:0] acc_bytes_d_pre_push;
+
     assign acc_bytes_d_pre_push =dut.acc_bytes_d_pre_push;
-    
+    assign acc_bytes_d = dut.acc_bytes_d;
     assign acc_bytes_q = dut.acc_bytes_q;
     assign acc_data_q = dut.acc_data_q;
-    assign acc_bytes_d = dut.acc_bytes_d;
     assign acc_data_d = dut.acc_data_d;
-
     assign push_flit = dut.push_flit;
     assign pop_rdi = dut.pop_rdi;
 
